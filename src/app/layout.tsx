@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Nunito } from "next/font/google";
+import AudioUnlocker from "@/components/ui/AudioUnlocker";
 import "./globals.css";
 
 const fredoka = Fredoka({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-body antialiased min-h-screen">
+        <AudioUnlocker />
         {children}
       </body>
     </html>
