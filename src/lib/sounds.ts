@@ -1,105 +1,133 @@
-// Web Audio API sound engine — no external files needed
-// All sounds are synthesized in the browser
+"use client";
+
+// ── Web Audio sound engine ───────────────────────────────────
+// Browsers block audio until the user interacts. We unlock it
+// on the first user gesture (click/touch anywhere on the page).
 
 let ctx: AudioContext | null = null;
+let unlocked = false;
 
-function getCtx(): AudioContext {
-  if (!ctx) ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+function getCtx(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  if (!ctx) {
+    ctx = new (window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  }
+  // Resume if suspended (common on mobile)
+  if (ctx.state === "suspended") ctx.resume();
   return ctx;
 }
 
-function play(fn: (ctx: AudioContext) => void) {
-  try { fn(getCtx()); } catch { /* audio blocked */ }
+// Call this once on any user gesture to unblock audio
+export function unlockAudio() {
+  if (unlocked) return;
+  unlocked = true;
+  const c = getCtx();
+  if (!c) return;
+  // Play a silent buffer to unlock
+  const buf = c.createBuffer(1, 1, 22050);
+  const src = c.createBufferSource();
+  src.buffer = buf;
+  src.connect(c.destination);
+  src.start(0);
 }
 
-// Pop/click — short percussive tick
+function play(fn: (ctx: AudioContext) => void) {
+  try {
+    const c = getCtx();
+    if (!c) return;
+    fn(c);
+  } catch { /* silently ignore */ }
+}
+
+// Pop/click — short tap sound
 export function sfxPop() {
-  play((ctx) => {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.setValueAtTime(600, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.06);
-    g.gain.setValueAtTime(0.3, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-    o.start(); o.stop(ctx.currentTime + 0.06);
+  play((c) => {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.frequency.setValueAtTime(700, c.currentTime);
+    o.frequency.exponentialRampToValueAtTime(250, c.currentTime + 0.07);
+    g.gain.setValueAtTime(0.35, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.07);
+    o.start(); o.stop(c.currentTime + 0.07);
   });
 }
 
-// Success chime — happy ascending notes
+// Success chime — ascending notes
 export function sfxSuccess() {
-  play((ctx) => {
+  play((c) => {
     [523, 659, 784, 1047].forEach((freq, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.connect(g); g.connect(c.destination);
       o.type = "sine";
       o.frequency.value = freq;
-      const t = ctx.currentTime + i * 0.1;
+      const t = c.currentTime + i * 0.1;
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.2, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-      o.start(t); o.stop(t + 0.25);
-    });
-  });
-}
-
-// Wrong/buzzer — low descending tone
-export function sfxWrong() {
-  play((ctx) => {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type = "sawtooth";
-    o.frequency.setValueAtTime(220, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.25);
-    g.gain.setValueAtTime(0.2, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    o.start(); o.stop(ctx.currentTime + 0.25);
-  });
-}
-
-// Countdown tick — sharp click
-export function sfxTick() {
-  play((ctx) => {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 880;
-    g.gain.setValueAtTime(0.15, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
-    o.start(); o.stop(ctx.currentTime + 0.04);
-  });
-}
-
-// Game over jingle — descending sad notes
-export function sfxGameOver() {
-  play((ctx) => {
-    [392, 349, 330, 262].forEach((freq, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.type = "triangle";
-      o.frequency.value = freq;
-      const t = ctx.currentTime + i * 0.15;
-      g.gain.setValueAtTime(0.2, t);
+      g.gain.linearRampToValueAtTime(0.25, t + 0.02);
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
       o.start(t); o.stop(t + 0.3);
     });
   });
 }
 
-// Combo sound — exciting escalating beep
+// Wrong/buzzer — descending sawtooth
+export function sfxWrong() {
+  play((c) => {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(250, c.currentTime);
+    o.frequency.exponentialRampToValueAtTime(80, c.currentTime + 0.3);
+    g.gain.setValueAtTime(0.25, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.3);
+    o.start(); o.stop(c.currentTime + 0.3);
+  });
+}
+
+// Countdown tick — sharp click
+export function sfxTick() {
+  play((c) => {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.frequency.value = 1000;
+    g.gain.setValueAtTime(0.2, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
+    o.start(); o.stop(c.currentTime + 0.04);
+  });
+}
+
+// Game over jingle — descending sad notes
+export function sfxGameOver() {
+  play((c) => {
+    [392, 349, 330, 262].forEach((freq, i) => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type = "triangle";
+      o.frequency.value = freq;
+      const t = c.currentTime + i * 0.18;
+      g.gain.setValueAtTime(0.25, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      o.start(t); o.stop(t + 0.35);
+    });
+  });
+}
+
+// Combo — exciting rising beep
 export function sfxCombo() {
-  play((ctx) => {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
+  play((c) => {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.connect(g); g.connect(c.destination);
     o.type = "square";
-    o.frequency.setValueAtTime(440, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-    g.gain.setValueAtTime(0.15, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-    o.start(); o.stop(ctx.currentTime + 0.15);
+    o.frequency.setValueAtTime(440, c.currentTime);
+    o.frequency.exponentialRampToValueAtTime(880, c.currentTime + 0.15);
+    g.gain.setValueAtTime(0.18, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
+    o.start(); o.stop(c.currentTime + 0.15);
   });
 }
