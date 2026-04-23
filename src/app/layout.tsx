@@ -1,44 +1,44 @@
 import type { Metadata, Viewport } from "next";
-import { Syne, DM_Sans } from "next/font/google";
+import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
+const fredoka = Fredoka({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const dmSans = DM_Sans({
+const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-body",
-  weight: ["300", "400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: { default: "MiniPlay — Quick Games, Big Fun", template: "%s | MiniPlay" },
-  description: "8 free browser games you can play in under 5 minutes. No downloads, no logins required. Word, puzzle, reflex, trivia and more.",
-  keywords: ["free online games", "browser games", "casual games", "quick games", "word games", "puzzle games"],
+  title: { default: "SNAACK — Quick Games, Big Fun!", template: "%s | SNAACK" },
+  description: "8 free casual games you can play in under 5 minutes. Word, puzzle, reflex, trivia and more — no download needed!",
+  keywords: ["free online games", "casual games", "quick games", "browser games", "snaack"],
   openGraph: {
-    title: "MiniPlay — Quick Games, Big Fun",
+    title: "SNAACK — Quick Games, Big Fun!",
     description: "8 free browser games. Play instantly on desktop or mobile.",
     type: "website",
     url: process.env.NEXT_PUBLIC_APP_URL,
   },
   twitter: { card: "summary_large_image" },
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "MiniPlay" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "SNAACK" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#111111",
+  themeColor: "#ff6b2b",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
-      <body className="bg-[#0e0e0e] text-white font-body antialiased min-h-screen">
+    <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
+      <body className="font-body antialiased min-h-screen">
         {children}
       </body>
     </html>
