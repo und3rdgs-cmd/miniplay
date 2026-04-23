@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Game } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -8,73 +9,141 @@ interface Props {
   style?: React.CSSProperties;
 }
 
-const CARD_COLORS: Record<string, { bg: string; border: string; glow: string }> = {
-  word:    { bg: "linear-gradient(135deg, #fff0fa, #ffe8f5)", border: "#f9a8d4", glow: "rgba(249,168,212,0.4)" },
-  reflex:  { bg: "linear-gradient(135deg, #fffbeb, #fef3c7)", border: "#fcd34d", glow: "rgba(252,211,77,0.4)" },
-  puzzle:  { bg: "linear-gradient(135deg, #f0fdfa, #ccfbf1)", border: "#5eead4", glow: "rgba(94,234,212,0.4)" },
-  trivia:  { bg: "linear-gradient(135deg, #eff6ff, #dbeafe)", border: "#93c5fd", glow: "rgba(147,197,253,0.4)" },
-  visual:  { bg: "linear-gradient(135deg, #fdf4ff, #fae8ff)", border: "#e879f9", glow: "rgba(232,121,249,0.4)" },
-  math:    { bg: "linear-gradient(135deg, #f0fdf4, #dcfce7)", border: "#86efac", glow: "rgba(134,239,172,0.4)" },
-  arcade:  { bg: "linear-gradient(135deg, #fff7ed, #ffedd5)", border: "#fb923c", glow: "rgba(251,146,60,0.4)" },
-  memory:  { bg: "linear-gradient(135deg, #f5f3ff, #ede9fe)", border: "#a78bfa", glow: "rgba(167,139,250,0.4)" },
+const FALLBACK_BG: Record<string, string> = {
+  word:    "linear-gradient(135deg, #ffd6f0, #ffb3e6)",
+  reflex:  "linear-gradient(135deg, #fff3a0, #ffe066)",
+  puzzle:  "linear-gradient(135deg, #b3f5e8, #80edd8)",
+  trivia:  "linear-gradient(135deg, #b3d9ff, #80bfff)",
+  visual:  "linear-gradient(135deg, #e8b3ff, #d480ff)",
+  math:    "linear-gradient(135deg, #b3ffcc, #80ff99)",
+  arcade:  "linear-gradient(135deg, #ffd4b3, #ffb380)",
+  memory:  "linear-gradient(135deg, #d4b3ff, #b380ff)",
+};
+
+// Games with custom PNG thumbnails — shown without background card
+const CUSTOM_PNG: Record<string, boolean> = {
+  wordrush: true,
 };
 
 export default function GameCard({ game, featured, style }: Props) {
-  const colors = CARD_COLORS[game.category] ?? CARD_COLORS.arcade;
+  const hasPng    = CUSTOM_PNG[game.slug];
+  const thumbSrc  = hasPng
+    ? `/thumbnails/${game.slug}.png`
+    : `/thumbnails/${game.slug}.svg`;
+  const fallbackBg = FALLBACK_BG[game.category] ?? FALLBACK_BG.arcade;
+  const size = featured ? 176 : 112;
 
   return (
-    <Link href={`/games/${game.slug}`}
-      className={cn(
-        "group block p-4 rounded-2xl transition-all duration-200 animate-fade-up",
-        "hover:-translate-y-1 active:scale-[0.97]",
+    <Link
+      href={`/games/${game.slug}`}
+      className={cn("group block animate-fade-up text-center transition-all duration-200 hover:-translate-y-2")}
+      style={style}
+    >
+      {hasPng ? (
+        /* Custom PNG — no background wrapper, image IS the card */
+        <div
+          className={cn(
+            "mx-auto mb-3 transition-transform duration-200 group-hover:scale-105 group-hover:rotate-2",
+            featured ? "w-44 h-44" : "w-28 h-28"
+          )}
+        >
+          <Image
+            src={thumbSrc}
+            alt={game.title}
+            width={size}
+            height={size}
+            className="w-full h-full object-contain drop-shadow-lg"
+            unoptimized
+          />
+        </div>
+      ) : (
+        /* SVG thumbnail — inside coloured background tile */
+        <div
+          className={cn(
+            "rounded-3xl mx-auto mb-3 overflow-hidden transition-transform duration-200 group-hover:scale-105 group-hover:rotate-2",
+            featured ? "w-44 h-44" : "w-28 h-28"
+          )}
+          style={{ background: fallbackBg, boxShadow: "0 6px 24px rgba(0,0,0,0.12)" }}
+        >
+          <Image
+            src={thumbSrc}
+            alt={game.title}
+            width={size}
+            height={size}
+            className="w-full h-full object-cover"
+            unoptimized
+          />
+        </div>
       )}
-      style={{
-        background: colors.bg,
-        border: `2px solid ${colors.border}`,
-        boxShadow: `0 2px 12px ${colors.glow}`,
-        ...style,
-      }}>
-
-      {/* Emoji icon */}
-      <div className={cn(
-        "rounded-2xl flex items-center justify-center mb-3 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6",
-        featured ? "text-5xl w-16 h-16" : "text-3xl w-12 h-12"
-      )}
-        style={{ background: "rgba(255,255,255,0.7)", boxShadow: `0 2px 8px ${colors.glow}` }}>
-        {game.emoji}
-      </div>
 
       {/* Title */}
-      <div className="font-display font-bold text-sm mb-1 truncate" style={{ color: "var(--text-1)" }}>
+      <div className={cn(
+        "font-display font-bold truncate",
+        featured ? "text-base" : "text-sm"
+      )} style={{ color: "var(--text-1)" }}>
         {game.title}
       </div>
 
-      {featured && (
-        <p className="text-xs leading-relaxed line-clamp-2 mb-2" style={{ color: "var(--text-2)" }}>
-          {game.description}
-        </p>
-      )}
-
-      {/* Tags */}
-      <div className="flex flex-wrap gap-1 mt-1">
-        {game.is_daily && (
-          <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                style={{ background: "var(--orange-dim)", color: "var(--orange)" }}>
-            Daily
-          </span>
-        )}
-        {game.is_pro_only && (
-          <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                style={{ background: "rgba(255,217,61,0.2)", color: "#b45309" }}>
-            Pro
-          </span>
-        )}
-        <span className="text-xs px-2 py-0.5 rounded-full capitalize font-medium"
-              style={{ background: "rgba(255,255,255,0.7)", color: "var(--text-3)" }}>
+      {/* Category + badges */}
+      <div className="flex flex-wrap gap-1 justify-center mt-1">
+        <span className="text-xs capitalize font-medium" style={{ color: "var(--text-3)" }}>
           {game.category}
         </span>
+        {game.is_daily && (
+          <span className="text-xs font-bold px-1.5 rounded-full"
+                style={{ background: "var(--orange-dim)", color: "var(--orange)" }}>
+            · Daily
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+  return (
+    <Link
+      href={`/games/${game.slug}`}
+      className={cn("group block animate-fade-up text-center transition-all duration-200 hover:-translate-y-2")}
+      style={style}
+    >
+      {/* Thumbnail */}
+      <div
+        className={cn(
+          "rounded-3xl mx-auto mb-3 overflow-hidden transition-transform duration-200 group-hover:scale-105 group-hover:rotate-2",
+          featured ? "w-44 h-44" : "w-28 h-28"
+        )}
+        style={{ background: fallbackBg, boxShadow: "0 6px 24px rgba(0,0,0,0.12)" }}
+      >
+        <Image
+          src={thumbSrc}
+          alt={game.title}
+          width={featured ? 176 : 112}
+          height={featured ? 176 : 112}
+          className="w-full h-full object-cover"
+          unoptimized
+        />
       </div>
 
+      {/* Title */}
+      <div className={cn(
+        "font-display font-bold truncate",
+        featured ? "text-base" : "text-sm"
+      )} style={{ color: "var(--text-1)" }}>
+        {game.title}
+      </div>
+
+      {/* Category + badges */}
+      <div className="flex flex-wrap gap-1 justify-center mt-1">
+        <span className="text-xs capitalize font-medium" style={{ color: "var(--text-3)" }}>
+          {game.category}
+        </span>
+        {game.is_daily && (
+          <span className="text-xs font-bold px-1.5 rounded-full"
+                style={{ background: "var(--orange-dim)", color: "var(--orange)" }}>
+            · Daily
+          </span>
+        )}
+      </div>
     </Link>
   );
 }
