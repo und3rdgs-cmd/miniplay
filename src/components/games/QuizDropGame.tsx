@@ -67,7 +67,7 @@ export default function QuizDropGame({ onGameOver }: Props) {
 
   const scoreRef  = useRef(score);
   scoreRef.current = score;
-  const timerRef  = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentQ = questions[qIndex];
   const isLast   = qIndex >= TOTAL_QUESTIONS - 1;
@@ -99,7 +99,7 @@ export default function QuizDropGame({ onGameOver }: Props) {
   }
 
   function scheduleNext() {
-    clearTimeout(timerRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       if (isLast) {
         onGameOver(scoreRef.current);
