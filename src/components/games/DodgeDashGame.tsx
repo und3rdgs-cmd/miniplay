@@ -37,7 +37,7 @@ export default function DodgeDashGame({ onGameOver }: Props) {
   aliveRef.current      = alive;
   scoreRef.current      = score;
 
-  const rafRef    = useRef<number>();
+  const rafRef    = useRef<number>(0);
   const lastTime  = useRef(0);
   const spawnTime = useRef(0);
 
