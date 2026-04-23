@@ -65,9 +65,6 @@ export default function NumChainGame({ onGameOver }: Props) {
   // Timer per round (reset each round)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const [timerKey, setTimerKey] = useState(0);
-  useState(() => {
-    setTimeLeft(ROUND_TIME);
-  });
 
   const nextRound = useCallback((pts: number) => {
     const newScore = scoreRef.current + pts;
